@@ -1,4 +1,13 @@
 package com.daroz.money_matters_api.data.dtos;
 
-public class UserDTO {
+import java.time.Instant;
+import java.util.List;
+
+public record UserDTO (
+        Long id,
+        String name,
+        String username,
+        String email,
+        Instant createdAt
+){
 }
