@@ -1,5 +1,18 @@
 package com.daroz.money_matters_api.services;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.daroz.money_matters_api.config.security.CustomUser;
@@ -12,25 +25,13 @@ import com.daroz.money_matters_api.data.enums.RolesENUM;
 import com.daroz.money_matters_api.data.models.PasswordRecoverToken;
 import com.daroz.money_matters_api.data.models.User;
 import com.daroz.money_matters_api.repositories.PasswordRecoverTokenRepository;
-import com.daroz.money_matters_api.repositories.RoleRepository;
 import com.daroz.money_matters_api.repositories.UserRepository;
 import com.daroz.money_matters_api.services.exceptions.ForbiddenException;
 import com.daroz.money_matters_api.services.exceptions.ResourceNotFoundException;
 import com.daroz.money_matters_api.services.exceptions.UnauthorizedException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Transactional(readOnly = true)
