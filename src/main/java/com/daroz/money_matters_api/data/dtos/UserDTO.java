@@ -1,7 +1,6 @@
 package com.daroz.money_matters_api.data.dtos;
 
 import java.time.Instant;
-import java.util.List;
 
 public record UserDTO (
         Long id,

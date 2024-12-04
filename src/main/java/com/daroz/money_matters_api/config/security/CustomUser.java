@@ -20,12 +20,10 @@ public class CustomUser extends User {
         this.name = name;
     }
 
-    public CustomUser(String username, String password, Collection<? extends GrantedAuthority> authorities) {
-        super(username, password, authorities);
-    }
-
-    public CustomUser(String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, Collection<? extends GrantedAuthority> authorities) {
-        super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
+    public CustomUser(com.daroz.money_matters_api.data.models.User user,  boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked) {
+        super(user.getUsername(), user.getPassword(), user.isEnabled(), accountNonExpired, credentialsNonExpired, accountNonLocked, user.getAuthorities());
+        this.id = user.getId();
+        this.name = user.getName();
     }
 
     public Long getId() {

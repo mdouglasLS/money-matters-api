@@ -28,17 +28,11 @@ public class WebSecurityConfig {
     @Autowired
     private AuthenticationConfiguration authenticationConfiguration;
 
-    @Value("${spring.security.accessToken.secret}")
-    public String accessTokenSecret;
-
-    @Value("${spring.security.refreshToken.secret}")
-    public String refreshTokenSecret;
+    @Autowired
+    private JWTUtil jwtUtil;
 
     @Value("${security.jwt.duration.access}")
     private Long accessTokenDuration;
-
-    @Value("${security.jwt.duration.refresh}")
-    private Long refreshTokenDuration;
 
     @Value("${spring.security.cors.origins}")
     private String corsOrigins;
@@ -50,7 +44,7 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JWTAuthenticatorFilter jwtAuthenticatorFilter = new JWTAuthenticatorFilter(authenticationManager(), accessTokenSecret, refreshTokenSecret, accessTokenDuration, refreshTokenDuration);
+        JWTAuthenticatorFilter jwtAuthenticatorFilter = new JWTAuthenticatorFilter(authenticationManager(), jwtUtil, accessTokenDuration);
         jwtAuthenticatorFilter.setFilterProcessesUrl("/v1/auth/token");
 
         return http
@@ -59,13 +53,13 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh-token").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/auth/refresh-token").permitAll()
                         .requestMatchers("/error").anonymous()
                         .anyRequest()
                         .authenticated()
                 )
                 .addFilter(jwtAuthenticatorFilter)
-                .addFilter(new JWTValidateFilter(authenticationManager(), accessTokenSecret))
+                .addFilter(new JWTValidateFilter(authenticationManager(), jwtUtil))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }

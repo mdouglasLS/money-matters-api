@@ -1,7 +1,5 @@
 package com.daroz.money_matters_api.config.security;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.daroz.money_matters_api.data.dtos.auth.TokenResponseDTO;
 import com.daroz.money_matters_api.data.models.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,23 +11,16 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Date;
-import java.util.stream.Collectors;
 
 public class JWTAuthenticatorFilter extends UsernamePasswordAuthenticationFilter {
 
-    public final String accessTokenSecret;
-
-    public final String refreshTokenSecret;
+    private final JWTUtil jwtUtil;
 
     private final Long accessTokenDuration;
-
-    private final Long refreshTokenDuration;
 
     @Override
     public void afterPropertiesSet() {
@@ -38,13 +29,10 @@ public class JWTAuthenticatorFilter extends UsernamePasswordAuthenticationFilter
 
     private final AuthenticationManager authenticationManager;
 
-    public JWTAuthenticatorFilter(AuthenticationManager authenticationManager, String accessTokenSecret, String refreshTokenSecret, Long accessTokenDuration, Long refreshTokenDuration) {
+    public JWTAuthenticatorFilter(AuthenticationManager authenticationManager, JWTUtil jwtUtil, Long accessTokenDuration) {
         this.authenticationManager = authenticationManager;
-        this.accessTokenSecret = accessTokenSecret;
-        this.refreshTokenSecret = refreshTokenSecret;
+        this.jwtUtil = jwtUtil;
         this.accessTokenDuration = accessTokenDuration;
-        this.refreshTokenDuration = refreshTokenDuration;
-
     }
 
     @Override
@@ -77,31 +65,8 @@ public class JWTAuthenticatorFilter extends UsernamePasswordAuthenticationFilter
 
         CustomUser user = (CustomUser) authResult.getPrincipal();
 
-        String accessToken = JWT.create()
-                .withSubject(user.getUsername())
-                .withClaim("name", user.getName())
-                .withClaim("id", user.getId())
-                .withExpiresAt(Date.from(Instant.now().plusSeconds(accessTokenDuration)))
-                .withIssuer(request.getRequestURL().toString())
-                .withClaim(
-                        "roles",
-                        user.getAuthorities()
-                                .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList())
-                )
-                .sign(Algorithm.HMAC512(accessTokenSecret));
-
-        String refreshToken = JWT.create()
-                .withSubject(user.getUsername())
-                .withClaim("name", user.getName())
-                .withClaim("id", user.getId())
-                .withExpiresAt(Date.from(Instant.now().plusSeconds(refreshTokenDuration)))
-                .withIssuer(request.getRequestURL().toString())
-                .withClaim(
-                        "roles",
-                        user.getAuthorities()
-                                .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList())
-                )
-                .sign(Algorithm.HMAC512(refreshTokenSecret));
+        String accessToken = jwtUtil.generateAccessToken(user, request);
+        String refreshToken = jwtUtil.generateRefreshToken(user, request);
 
         TokenResponseDTO responseDTO = new TokenResponseDTO(accessToken, refreshToken, Instant.now().plusSeconds(accessTokenDuration).toString());
 

@@ -1,5 +1,8 @@
 package com.daroz.money_matters_api.services;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class WalletService {
 
     public String getWalletByEmail() {

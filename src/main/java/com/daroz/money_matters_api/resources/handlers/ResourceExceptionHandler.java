@@ -4,6 +4,7 @@ import com.daroz.money_matters_api.data.dtos.CustomErrorDTO;
 import com.daroz.money_matters_api.services.exceptions.DatabaseException;
 import com.daroz.money_matters_api.services.exceptions.ForbiddenException;
 import com.daroz.money_matters_api.services.exceptions.ResourceNotFoundException;
+import com.daroz.money_matters_api.services.exceptions.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,13 @@ public class ResourceExceptionHandler {
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<CustomErrorDTO> forbidden(ForbiddenException e, HttpServletRequest request) {
         HttpStatus status = HttpStatus.FORBIDDEN;
+        CustomErrorDTO error = new CustomErrorDTO(Instant.now(),status.value(), e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(error);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<CustomErrorDTO> unauthorized(UnauthorizedException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
         CustomErrorDTO error = new CustomErrorDTO(Instant.now(),status.value(), e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status).body(error);
     }

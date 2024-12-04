@@ -21,16 +21,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class JWTValidateFilter extends BasicAuthenticationFilter {
 
-    public final String accessTokenSecret;
+    private final JWTUtil jwtUtil;
 
     public static final String BEARER_HEADER = "Bearer ";
 
-    public JWTValidateFilter(AuthenticationManager authenticationManager, String accessTokenSecret) {
+    public JWTValidateFilter(AuthenticationManager authenticationManager, JWTUtil jwtUtil) {
         super(authenticationManager);
-        this.accessTokenSecret = accessTokenSecret;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -42,24 +43,31 @@ public class JWTValidateFilter extends BasicAuthenticationFilter {
 
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (!Objects.isNull(authorizationHeader) && authorizationHeader.startsWith(BEARER_HEADER)) {
+        if (Objects.nonNull(authorizationHeader) && authorizationHeader.startsWith(BEARER_HEADER)) {
             try {
+
                 String token = authorizationHeader.substring(BEARER_HEADER.length());
-                Algorithm algorithm = Algorithm.HMAC512(accessTokenSecret);
-                JWTVerifier build = JWT.require(algorithm).build();
-                DecodedJWT decodedJWT = build.verify(token);
-                String username = decodedJWT.getSubject();
-                String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
-                Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                Arrays.stream(roles).forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                chain.doFilter(request, response);
+                DecodedJWT decodedJWT = jwtUtil.validateToken(token, false);
+                UsernamePasswordAuthenticationToken authentication = getAuthentication(decodedJWT);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
             } catch (Exception e) {
-                response.sendError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid token: " + e.getMessage());
+                return;
             }
-        } else chain.doFilter(request, response);
+        }
+        chain.doFilter(request, response);
+    }
+
+    private UsernamePasswordAuthenticationToken getAuthentication(DecodedJWT decodedJWT) {
+        String username = decodedJWT.getSubject();
+        String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+
+        Collection<SimpleGrantedAuthority> authorities = Arrays.stream(roles)
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        return new UsernamePasswordAuthenticationToken(username, null, authorities);
     }
 
 }
